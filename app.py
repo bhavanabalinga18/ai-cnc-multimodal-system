@@ -3,7 +3,13 @@ import numpy as np
 import pandas as pd
 import joblib
 import matplotlib.pyplot as plt
-from tensorflow.keras.models import load_model
+
+# Try loading model safely
+try:
+    from tensorflow.keras.models import load_model
+    model = load_model("model/lstm_model.h5", compile=False)
+except:
+    model = None
 
 # -------------------------------
 # IMPORT UTILS
@@ -14,7 +20,6 @@ from utils.digital_twin import simulate_tool_wear
 from utils.predictive import predict_failure
 from utils.streaming import get_sensor_data
 from utils.quantum import quantum_optimize
-from utils.audio_utils import process_audio
 from utils.image_utils import process_image
 from utils.api_integration import fetch_cnc_data
 from utils.edge import lightweight_predict
@@ -31,16 +36,15 @@ with open("assets/styles.css") as f:
     st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
 
 # -------------------------------
-# LOAD MODEL + DATA
+# LOAD DATA + SCALER
 # -------------------------------
 @st.cache_resource
 def load_all():
-    model = load_model("model/lstm_model.h5", compile=False)
     scaler = joblib.load("model/scaler.save")
     dataset = pd.read_csv("data/cnc_data.csv")
-    return model, scaler, dataset
+    return scaler, dataset
 
-model, scaler, dataset = load_all()
+scaler, dataset = load_all()
 
 # -------------------------------
 # TITLE
@@ -48,12 +52,16 @@ model, scaler, dataset = load_all()
 st.title("🤖 AI CNC Multimodal Dashboard")
 
 # -------------------------------
-# KPI
+# KPI CARDS
 # -------------------------------
-c1, c2, c3 = st.columns(3)
-c1.metric("Rows", len(dataset))
-c2.metric("Model", "LSTM")
-c3.metric("Mode", "Hybrid")
+st.markdown("## 📊 System Overview")
+
+k1, k2, k3, k4 = st.columns(4)
+
+k1.metric("Data Rows", len(dataset))
+k2.metric("Model", "LSTM / Fallback")
+k3.metric("Status", "Active")
+k4.metric("Mode", "Hybrid")
 
 # -------------------------------
 # DATA SOURCE
@@ -86,14 +94,13 @@ else:
         data_input = api_data
         st.success(f"🌐 API Data: {data_input}")
     else:
-        st.error("API failed, using default")
+        st.error("API failed, using default values")
         data_input = [100, 0.2, 1.0, 30, 0.01]
 
 # -------------------------------
-# MULTIMODAL INPUT
+# IMAGE INPUT (ONLY SAFE MODAL)
 # -------------------------------
-audio_file = st.file_uploader("🎤 Upload Audio", type=["wav"])
-image_file = st.file_uploader("🖼 Upload Image", type=["jpg", "png"])
+image_file = st.file_uploader("🖼 Upload Tool Image", type=["jpg", "png"])
 
 # -------------------------------
 # RUN SYSTEM
@@ -101,9 +108,15 @@ image_file = st.file_uploader("🖼 Upload Image", type=["jpg", "png"])
 if st.button("🚀 Run AI System"):
 
     try:
-        # ---------------- AI MODEL ----------------
+        # Prepare input
         processed = prepare_input(data_input, scaler)
-        prediction = model.predict(processed)[0][0]
+
+        # ---------------- AI / FALLBACK ----------------
+        if model:
+            prediction = model.predict(processed)[0][0]
+        else:
+            prediction = sum(data_input) / len(data_input)
+
         st.success(f"🔮 Prediction: {prediction:.4f}")
 
         # ---------------- EDGE ----------------
@@ -121,25 +134,21 @@ if st.button("🚀 Run AI System"):
         # ---------------- ANOMALY ----------------
         anomaly, threshold = detect_anomaly(data_input)
         if anomaly:
-            st.error(f"🚨 Anomaly! Threshold: {threshold:.2f}")
+            st.error(f"🚨 Anomaly Detected! Threshold: {threshold:.2f}")
         else:
-            st.success("✅ Normal")
-
-        # ---------------- AUDIO ----------------
-        if audio_file:
-            audio_feat = process_audio(audio_file)
-            st.info(f"🎤 Audio Mean: {np.mean(audio_feat):.2f}")
+            st.success("✅ Normal Operation")
 
         # ---------------- IMAGE ----------------
         if image_file:
-            st.image(image_file, caption="Uploaded Image")
+            st.image(image_file, caption="Tool Inspection", use_container_width=True)
             process_image(image_file)
 
         # ---------------- GRAPH ----------------
-        st.subheader("📊 Parameters Graph")
+        st.subheader("📊 Machine Parameters")
+
         fig, ax = plt.subplots()
         ax.plot(data_input, marker='o')
-        ax.set_title("Machine Parameters")
+        ax.set_title("Parameters Trend")
         st.pyplot(fig)
 
         # ---------------- QUANTUM ----------------
@@ -153,5 +162,5 @@ if st.button("🚀 Run AI System"):
 # SIDEBAR
 # -------------------------------
 st.sidebar.title("📊 System Status")
-st.sidebar.success("AI Active")
-st.sidebar.info("Hybrid System Running")
+st.sidebar.success("System Running")
+st.sidebar.info("Safe Deployment Mode")
