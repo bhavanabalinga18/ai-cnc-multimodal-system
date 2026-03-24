@@ -1,12 +1,13 @@
 streamlit
-tensorflow
 numpy
 pandas
 scikit-learn
 joblib
 matplotlib
-opencv-python
+plotly
+opencv-python-headless
 pillow
-soundfile
-librosa
 requests
+librosa==0.10.1
+soundfile
+tensorflow-cpu==2.12.0
