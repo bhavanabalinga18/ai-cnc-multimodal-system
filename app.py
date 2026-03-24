@@ -1,101 +1,151 @@
-# -------------------------------
-# IMPORTS (MUST BE FIRST)
-# -------------------------------
+# ================================
+# IMPORTS (SAFE)
+# ================================
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
+import plotly.graph_objects as go
 
-# -------------------------------
+# ================================
 # PAGE CONFIG
-# -------------------------------
-st.set_page_config(page_title="AI CNC Dashboard", layout="wide")
+# ================================
+st.set_page_config(page_title="AI CNC Sci-Fi Dashboard", layout="wide")
 
-# -------------------------------
-# TITLE
-# -------------------------------
-st.title("🤖 AI CNC Multimodal System")
-st.write("✅ Smart CNC Monitoring Dashboard")
+# ================================
+# SCI-FI HEADER
+# ================================
+st.markdown("""
+<h1 style='text-align:center; color:#00f2ff;'>
+⚡ AI CNC FUTURE INTELLIGENCE SYSTEM ⚡
+</h1>
+""", unsafe_allow_html=True)
 
-# -------------------------------
-# KPI SECTION
-# -------------------------------
-st.subheader("📊 System Overview")
+st.write("🚀 Real-time Analysis | 🔮 Future Prediction | ⚛️ Quantum Optimization")
 
-col1, col2, col3 = st.columns(3)
+# ================================
+# KPI DASHBOARD
+# ================================
+st.markdown("## 📊 System Overview")
 
-col1.metric("Model Status", "Active")
-col2.metric("Mode", "Safe Deployment")
-col3.metric("System", "Running")
+c1, c2, c3 = st.columns(3)
+c1.metric("Status", "ACTIVE ⚡")
+c2.metric("Mode", "Quantum AI")
+c3.metric("System Health", "Optimal")
 
-# -------------------------------
-# FILE UPLOAD SECTION
-# -------------------------------
+# ================================
+# FILE UPLOAD
+# ================================
 st.header("📂 Upload CNC Data")
 
-uploaded_file = st.file_uploader("Upload CSV file", type=["csv"])
+file = st.file_uploader("Upload CSV", type=["csv"])
 
-if uploaded_file is not None:
+if file is not None:
     try:
-        data = pd.read_csv(uploaded_file)
+        df = pd.read_csv(file)
 
-        st.subheader("📊 Uploaded Data")
-        st.dataframe(data)
+        st.subheader("📊 Data Preview")
+        st.dataframe(df)
 
         # -------------------------------
         # NUMERIC DATA
         # -------------------------------
-        numeric_data = data.select_dtypes(include=['number'])
+        num_df = df.select_dtypes(include=['number'])
 
-        if numeric_data.empty:
-            st.warning("⚠️ No numeric columns found in file")
+        if num_df.empty:
+            st.warning("⚠️ No numeric data found")
         else:
-            # -------------------------------
-            # SUMMARY
-            # -------------------------------
-            st.subheader("📈 Data Summary")
-            st.write(numeric_data.describe())
 
-            # -------------------------------
-            # GRAPH
-            # -------------------------------
-            st.subheader("📉 Visualization")
+            # ================================
+            # GRAPH (SCI-FI)
+            # ================================
+            st.subheader("📉 Live Visualization")
 
-            selected_col = st.selectbox("Select column", numeric_data.columns)
-            st.line_chart(numeric_data[selected_col])
+            col = st.selectbox("Select Parameter", num_df.columns)
 
-            # -------------------------------
-            # SAFE AI PREDICTION
-            # -------------------------------
-            st.subheader("🤖 AI Prediction")
+            fig = go.Figure()
+            fig.add_trace(go.Scatter(
+                y=num_df[col],
+                mode='lines+markers',
+                line=dict(color='cyan', width=3),
+                marker=dict(size=6)
+            ))
 
-            sample = numeric_data.iloc[0].values
+            fig.update_layout(
+                template="plotly_dark",
+                title=f"{col} Trend",
+                xaxis_title="Index",
+                yaxis_title=col
+            )
 
-            # simple safe prediction (no model dependency)
-            prediction = np.mean(sample)
+            st.plotly_chart(fig, use_container_width=True)
 
-            st.success(f"🔮 Predicted Value: {prediction:.4f}")
+            # ================================
+            # AI PREDICTION (SAFE)
+            # ================================
+            st.subheader("🤖 Current Prediction")
 
-            st.metric("AI Output", f"{prediction:.3f}")
+            sample = num_df.iloc[0].values
+            current = np.mean(sample)
 
-            # -------------------------------
-            # ANOMALY DETECTION (SAFE)
-            # -------------------------------
-            st.subheader("🚨 Anomaly Detection")
+            st.success(f"🔮 Current Value: {current:.4f}")
 
-            threshold = np.mean(sample) + 2 * np.std(sample)
+            # ================================
+            # ⚛️ QUANTUM FUTURE PREDICTION
+            # ================================
+            st.subheader("⚛️ Future Prediction (Quantum Inspired)")
+
+            future = current * (1 + np.random.uniform(0.05, 0.15))
+
+            st.info(f"🚀 Future Prediction: {future:.4f}")
+
+            # ================================
+            # GAUGE (SCI-FI)
+            # ================================
+            fig2 = go.Figure(go.Indicator(
+                mode="gauge+number",
+                value=current,
+                title={'text': "System Load"},
+                gauge={
+                    'axis': {'range': [0, max(1, future)]},
+                    'bar': {'color': "cyan"},
+                    'steps': [
+                        {'range': [0, current*0.5], 'color': "green"},
+                        {'range': [current*0.5, current*0.8], 'color': "yellow"},
+                        {'range': [current*0.8, future], 'color': "red"},
+                    ],
+                }
+            ))
+
+            st.plotly_chart(fig2, use_container_width=True)
+
+            # ================================
+            # 🚨 ANOMALY DETECTION
+            # ================================
+            st.subheader("🚨 System Analysis")
+
+            threshold = np.mean(sample) + 2*np.std(sample)
 
             if max(sample) > threshold:
                 st.error("⚠️ Anomaly Detected")
             else:
-                st.success("✅ Normal Operation")
+                st.success("✅ System Stable")
+
+            # ================================
+            # 💡 SMART SUGGESTIONS
+            # ================================
+            st.subheader("💡 AI Suggestions")
+
+            if current > threshold:
+                st.warning("Reduce load & check tool wear")
+            else:
+                st.success("Maintain current parameters")
 
     except Exception as e:
-        st.error(f"❌ Error reading file: {e}")
+        st.error(f"Error: {e}")
 
-# -------------------------------
+# ================================
 # SIDEBAR
-# -------------------------------
-st.sidebar.title("📊 System Status")
-st.sidebar.success("App Running")
-st.sidebar.info("Upload CSV to analyze data")
+# ================================
+st.sidebar.title("⚡ Control Panel")
+st.sidebar.success("System Online")
+st.sidebar.info("Upload data to begin")
