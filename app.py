@@ -4,14 +4,15 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
+import time
 
 # ================================
-# PAGE CONFIG
+# CONFIG
 # ================================
-st.set_page_config(page_title="AI CNC Dashboard", layout="wide")
+st.set_page_config(page_title="AI CNC Futuristic Dashboard", layout="wide")
 
 # ================================
-# DARK THEME CSS (SCI-FI STYLE)
+# SCI-FI STYLE
 # ================================
 st.markdown("""
 <style>
@@ -19,15 +20,11 @@ body {
     background-color: #0f1117;
     color: white;
 }
-.card {
-    background: linear-gradient(145deg, #1c1f26, #111318);
+.block {
+    background: #151821;
     padding: 20px;
     border-radius: 15px;
-    box-shadow: 0 0 15px rgba(0,255,255,0.1);
-}
-.big-font {
-    font-size: 22px;
-    font-weight: bold;
+    box-shadow: 0 0 10px rgba(0,255,255,0.2);
 }
 </style>
 """, unsafe_allow_html=True)
@@ -35,82 +32,99 @@ body {
 # ================================
 # HEADER
 # ================================
-st.title("⚡ AI CNC FUTURE DASHBOARD")
-st.write("Smart Monitoring • Prediction • Analysis")
+st.title("⚡ AI CNC FUTURE SYSTEM")
+st.write("🔮 Live Monitoring • Simulation • Prediction")
 
 # ================================
-# KPI CARDS
+# SIDEBAR CONTROL
 # ================================
-col1, col2, col3 = st.columns(3)
+st.sidebar.title("⚙️ Control Panel")
 
-with col1:
-    st.markdown('<div class="card"><div class="big-font">⚙️ System</div>Active</div>', unsafe_allow_html=True)
+mode = st.sidebar.selectbox("Mode", ["Upload Data", "Live Simulation"])
 
-with col2:
-    st.markdown('<div class="card"><div class="big-font">🤖 AI Mode</div>Running</div>', unsafe_allow_html=True)
-
-with col3:
-    st.markdown('<div class="card"><div class="big-font">⚡ Health</div>Optimal</div>', unsafe_allow_html=True)
+refresh = st.sidebar.slider("Refresh Speed (sec)", 1, 5, 2)
 
 # ================================
-# FILE UPLOAD
+# LIVE SIMULATION MODE
 # ================================
-st.header("📂 Upload CNC Data")
-file = st.file_uploader("Upload CSV", type=["csv"])
+if mode == "Live Simulation":
 
-if file:
-    try:
-        df = pd.read_csv(file)
+    st.subheader("📡 Real-Time CNC Simulation")
 
-        st.subheader("📊 Data Preview")
-        st.dataframe(df)
+    chart = st.line_chart()
+    status_box = st.empty()
 
-        num_df = df.select_dtypes(include=['number'])
+    data = []
 
-        if not num_df.empty:
+    for i in range(50):
+        new_value = np.random.uniform(20, 100)
+        data.append(new_value)
 
-            # ================================
-            # GRAPH
-            # ================================
-            st.subheader("📈 Performance Graph")
+        chart.add_rows(pd.DataFrame([new_value]))
 
-            col = st.selectbox("Select parameter", num_df.columns)
-            st.line_chart(num_df[col])
+        # Prediction (simple future estimation)
+        future = new_value * np.random.uniform(1.05, 1.15)
 
-            # ================================
-            # CURRENT VALUE
-            # ================================
-            current = np.mean(num_df.iloc[0])
-
-            c1, c2, c3 = st.columns(3)
-
-            c1.metric("Current Value", f"{current:.2f}")
-            c2.metric("Future Prediction", f"{current*1.1:.2f}")
-            c3.metric("Efficiency", f"{np.random.randint(85, 100)}%")
-
-            # ================================
-            # STATUS
-            # ================================
-            st.subheader("🚨 System Status")
-
-            threshold = np.mean(num_df.values) + 2*np.std(num_df.values)
-
-            if np.max(num_df.values) > threshold:
-                st.error("⚠️ Anomaly Detected")
-                st.warning("Suggestion: Reduce load / check tool wear")
-            else:
-                st.success("✅ System Stable")
-                st.info("Suggestion: Maintain current parameters")
-
+        # Status
+        if new_value > 85:
+            status = "⚠️ High Load"
         else:
-            st.warning("No numeric data found")
+            status = "✅ Normal"
 
-    except Exception as e:
-        st.error(f"Error: {e}")
+        status_box.markdown(f"""
+        ### 🔧 Current Value: {new_value:.2f}
+        ### 🔮 Future Prediction: {future:.2f}
+        ### 🚨 Status: {status}
+        """)
+
+        time.sleep(refresh)
 
 # ================================
-# SIDEBAR
+# UPLOAD MODE
 # ================================
-st.sidebar.title("⚡ Control Panel")
-st.sidebar.success("System Online")
-st.sidebar.info("Upload data to activate dashboard")
+else:
+
+    st.subheader("📂 Upload CNC Data")
+
+    file = st.file_uploader("Upload CSV", type=["csv"])
+
+    if file:
+        try:
+            df = pd.read_csv(file)
+
+            st.dataframe(df)
+
+            num_df = df.select_dtypes(include=['number'])
+
+            if not num_df.empty:
+
+                col = st.selectbox("Select Parameter", num_df.columns)
+
+                st.line_chart(num_df[col])
+
+                # Prediction
+                current = np.mean(num_df.iloc[0])
+                future = current * 1.1
+
+                c1, c2, c3 = st.columns(3)
+
+                c1.metric("Current", f"{current:.2f}")
+                c2.metric("Future", f"{future:.2f}")
+                c3.metric("Efficiency", f"{np.random.randint(85,100)}%")
+
+                # Suggestion
+                if current > np.mean(num_df.values):
+                    st.warning("⚠️ Reduce cutting speed")
+                else:
+                    st.success("✅ Optimal parameters")
+
+            else:
+                st.warning("No numeric data")
+
+        except Exception as e:
+            st.error(f"Error: {e}")
+
+# ================================
+# FOOTER
+# ================================
+st.sidebar.success("⚡ System Active")
